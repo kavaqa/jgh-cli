@@ -28,10 +28,10 @@ mygh pr create    --title <t> [--body <b> | --body-file <path>] --base <branch> 
 mygh pr list      [--state open|closed|all] [--limit N] [--repo owner/name] [--json]
 mygh pr view      <number> [--repo owner/name] [--json]
 mygh pr threads   <number> [--all | --unresolved] [--json] [--repo owner/name]
-mygh pr reply     <number> --thread <threadId> (--body <b> | --body-file <path>) [--resolve] [--repo owner/name]
-mygh pr resolve   <number> --thread <threadId> [--repo owner/name]
-mygh pr unresolve <number> --thread <threadId> [--repo owner/name]
-mygh pr comment   <number> (--body <b> | --body-file <path>) [--repo owner/name]
+mygh pr reply     <number> --thread <threadId> (--body <b> | --body-file <path>) [--resolve] [--json] [--repo owner/name]
+mygh pr resolve   <number> --thread <threadId> [--json] [--repo owner/name]
+mygh pr unresolve <number> --thread <threadId> [--json] [--repo owner/name]
+mygh pr comment   <number> (--body <b> | --body-file <path>) [--json] [--repo owner/name]
 ```
 
 `threadId` берётся из вывода `mygh pr threads <n>` (GraphQL node id).
@@ -83,6 +83,19 @@ $pem | Out-File -Encoding ascii "$env:USERPROFILE\Downloads\zscaler-root.pem"
 ```
 
 При TLS-ошибке без настроенного CA `mygh` печатает подсказку про экспорт Zscaler-сертификата.
+
+## Машинно-читаемый вывод (для агентов)
+
+CLI рассчитан на вызов из агента/скрипта, поэтому:
+
+- **`--json` есть у всех команд**, включая пишущие (`reply`/`resolve`/`unresolve`/`comment`) —
+  парсибельный результат вместо человекочитаемой строки.
+- **Ошибки категоризированы**: на stderr печатается `error [<category>]: <message>`, где
+  `category` стабильна и позволяет ветвиться без разбора текста. Возможные категории:
+  `auth`, `sso`, `rate_limit`, `not_found`, `validation`, `forbidden`, `graphql`, `tls`,
+  `network`, `config`, `usage`, `http_<код>`, `internal`.
+- **stdout/stderr всегда в UTF-8** (в т.ч. на Windows) — кириллица в телах комментариев не бьётся.
+- `pr list --limit N` при `N > 100` честно пагинирует, а не молча обрезает до 100.
 
 ## Коды возврата
 

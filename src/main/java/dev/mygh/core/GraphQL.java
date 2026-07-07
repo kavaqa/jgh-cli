@@ -39,11 +39,11 @@ public final class GraphQL {
                     sb.append(" (").append(type.asText()).append(")");
                 }
             }
-            throw ApiException.api(sb.toString());
+            throw ApiException.of("graphql", sb.toString(), ApiException.EXIT_API);
         }
         JsonNode data = root.get("data");
         if (data == null || data.isNull()) {
-            throw ApiException.api("GraphQL response contained no data");
+            throw ApiException.of("graphql", "GraphQL response contained no data", ApiException.EXIT_API);
         }
         return data;
     }

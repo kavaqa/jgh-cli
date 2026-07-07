@@ -45,18 +45,20 @@ public final class RepoResolver {
     public Repo resolve(String explicit) {
         if (explicit != null && !explicit.isBlank()) {
             return parseOwnerName(explicit)
-                    .orElseThrow(() -> ApiException.api(
-                            "invalid --repo value '" + explicit + "', expected owner/name"));
+                    .orElseThrow(() -> ApiException.of("config",
+                            "invalid --repo value '" + explicit + "', expected owner/name",
+                            ApiException.EXIT_API));
         }
         if (config.defaultRepo().isPresent()) {
             return parseOwnerName(config.defaultRepo().get())
-                    .orElseThrow(() -> ApiException.api(
-                            "invalid GH_REPO value '" + config.defaultRepo().get() + "', expected owner/name"));
+                    .orElseThrow(() -> ApiException.of("config",
+                            "invalid GH_REPO value '" + config.defaultRepo().get() + "', expected owner/name",
+                            ApiException.EXIT_API));
         }
         Optional<Repo> fromGit = fromGitRemote();
-        return fromGit.orElseThrow(() -> ApiException.api(
+        return fromGit.orElseThrow(() -> ApiException.of("config",
                 "could not determine repository: pass --repo owner/name, set GH_REPO, "
-                        + "or run inside a git repo with a github remote"));
+                        + "or run inside a git repo with a github remote", ApiException.EXIT_API));
     }
 
     /** Parse a plain "owner/name" string. */

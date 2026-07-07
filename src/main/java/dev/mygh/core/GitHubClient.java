@@ -58,21 +58,31 @@ public final class GitHubClient {
         return parsePullRequest(Json.parse(json));
     }
 
-    /** GET /repos/{owner}/{repo}/pulls?state=&per_page= */
+    /**
+     * GET /repos/{owner}/{repo}/pulls, following pagination until {@code limit}
+     * items are collected (so --limit > 100 is honored, not silently truncated).
+     */
     public List<PullRequest> listPullRequests(Repo repo, String state, int limit) {
         int perPage = Math.min(Math.max(limit, 1), 100);
-        String path = String.format("/repos/%s/%s/pulls?state=%s&per_page=%d",
-                repo.owner(), repo.name(), state, perPage);
-        String json = restGet(restUri(path));
-        JsonNode arr = Json.parse(json);
         List<PullRequest> out = new ArrayList<>();
-        if (arr.isArray()) {
+        int page = 1;
+        while (out.size() < limit) {
+            String path = String.format("/repos/%s/%s/pulls?state=%s&per_page=%d&page=%d",
+                    repo.owner(), repo.name(), state, perPage, page);
+            JsonNode arr = Json.parse(restGet(restUri(path)));
+            if (!arr.isArray() || arr.isEmpty()) {
+                break;
+            }
             for (JsonNode node : arr) {
                 out.add(parsePullRequest(node));
                 if (out.size() >= limit) {
                     break;
                 }
             }
+            if (arr.size() < perPage) {
+                break; // last page reached
+            }
+            page++;
         }
         return out;
     }
@@ -210,27 +220,32 @@ public final class GitHubClient {
 
         switch (status) {
             case 401:
-                return ApiException.auth("401 unauthorized: invalid or missing token"
-                        + (apiMessage != null ? " (" + apiMessage + ")" : ""));
+                return ApiException.of("auth", "401 unauthorized: invalid or missing token"
+                        + (apiMessage != null ? " (" + apiMessage + ")" : ""), ApiException.EXIT_AUTH);
             case 403:
                 if (isSsoError(response, body)) {
                     String org = ssoOrg(response);
-                    return ApiException.auth("403 forbidden: token is not authorized for SSO"
+                    return ApiException.of("sso", "403 forbidden: token is not authorized for SSO"
                             + (org != null ? " organization '" + org + "'" : "")
-                            + ". Authorize your PAT under the token settings → Configure SSO.");
+                            + ". Authorize your PAT under the token settings → Configure SSO.",
+                            ApiException.EXIT_AUTH);
                 }
                 if (isRateLimited(response)) {
-                    return ApiException.api("403 rate limit exceeded" + rateLimitResetHint(response));
+                    return ApiException.of("rate_limit",
+                            "403 rate limit exceeded" + rateLimitResetHint(response), ApiException.EXIT_API);
                 }
-                return ApiException.api("403 forbidden"
-                        + (apiMessage != null ? ": " + apiMessage : ""));
+                return ApiException.of("forbidden", "403 forbidden"
+                        + (apiMessage != null ? ": " + apiMessage : ""), ApiException.EXIT_API);
             case 404:
-                return ApiException.api("404 not found: repository or PR does not exist, or no access");
+                return ApiException.of("not_found",
+                        "404 not found: repository or PR does not exist, or no access", ApiException.EXIT_API);
             case 422:
-                return ApiException.api("422 unprocessable: " + describe422(body, apiMessage));
+                return ApiException.of("validation",
+                        "422 unprocessable: " + describe422(body, apiMessage), ApiException.EXIT_API);
             default:
-                return ApiException.api(status + " error"
-                        + (apiMessage != null ? ": " + apiMessage : ": " + truncate(body)));
+                return ApiException.of("http_" + status, status + " error"
+                        + (apiMessage != null ? ": " + apiMessage : ": " + truncate(body)),
+                        ApiException.EXIT_API);
         }
     }
 

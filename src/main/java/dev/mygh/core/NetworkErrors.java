@@ -17,23 +17,24 @@ public final class NetworkErrors {
 
     public static ApiException translate(IOException e) {
         if (isTlsTrustProblem(e)) {
-            return ApiException.auth(
+            return ApiException.of("tls",
                     "TLS handshake failed (" + rootMessage(e) + ").\n"
                     + "You appear to be behind a TLS-intercepting proxy (e.g. Zscaler). "
                     + "Export its root CA and point GH_CA_BUNDLE at the PEM file, "
-                    + "or import the root into the JDK cacerts truststore.");
+                    + "or import the root into the JDK cacerts truststore.", ApiException.EXIT_AUTH);
         }
         if (e instanceof UnknownHostException) {
-            return ApiException.api(
+            return ApiException.of("network",
                     "cannot resolve host (" + e.getMessage() + ").\n"
-                    + "This environment is likely behind a proxy — check HTTPS_PROXY / HTTP_PROXY.");
+                    + "This environment is likely behind a proxy — check HTTPS_PROXY / HTTP_PROXY.",
+                    ApiException.EXIT_API);
         }
         if (e instanceof ConnectException) {
-            return ApiException.api(
+            return ApiException.of("network",
                     "connection refused/failed (" + e.getMessage() + ").\n"
-                    + "Check the proxy settings in HTTPS_PROXY / HTTP_PROXY.");
+                    + "Check the proxy settings in HTTPS_PROXY / HTTP_PROXY.", ApiException.EXIT_API);
         }
-        return ApiException.api("network error: " + rootMessage(e));
+        return ApiException.of("network", "network error: " + rootMessage(e), ApiException.EXIT_API);
     }
 
     private static boolean isTlsTrustProblem(Throwable e) {

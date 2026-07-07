@@ -114,6 +114,7 @@ class GitHubClientTest {
         ApiException ex = assertThrows(ApiException.class,
                 () -> client().viewPullRequest(new Repo("octocat", "hello"), 1));
         assertEquals(ApiException.EXIT_AUTH, ex.exitCode());
+        assertEquals("sso", ex.category());
         assertTrue(ex.getMessage().toLowerCase().contains("sso"));
         assertTrue(ex.getMessage().contains("octo-enterprise"));
     }
@@ -201,6 +202,32 @@ class GitHubClientTest {
                 () -> client().resolveThread("bad-id"));
         assertEquals(ApiException.EXIT_API, ex.exitCode());
         assertTrue(ex.getMessage().contains("Could not resolve to a node"));
+    }
+
+    @Test
+    void listPaginatesBeyondOnePage() {
+        // limit=150 must fetch two pages (100 + 50) and honor the limit.
+        route("GET /repos/octocat/hello/pulls", ex -> {
+            String query = ex.getRequestURI().getQuery();
+            boolean page2 = query != null && query.contains("page=2");
+            StringBuilder sb = new StringBuilder("[");
+            int count = page2 ? 100 : 100; // 100 on page 1, 100 available on page 2
+            for (int i = 0; i < count; i++) {
+                if (i > 0) {
+                    sb.append(",");
+                }
+                sb.append("{\"number\":").append(page2 ? 100 + i : i).append("}");
+            }
+            sb.append("]");
+            try {
+                send(ex, 200, sb.toString());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        List<PullRequest> prs = client().listPullRequests(new Repo("octocat", "hello"), "open", 150);
+        assertEquals(150, prs.size());
     }
 
     @Test
