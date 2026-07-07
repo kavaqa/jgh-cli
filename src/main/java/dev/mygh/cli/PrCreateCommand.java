@@ -15,8 +15,12 @@ public final class PrCreateCommand extends BaseCommand {
     @Option(names = "--title", required = true, description = "PR title")
     String title;
 
-    @Option(names = "--body", description = "PR body", defaultValue = "")
+    @Option(names = "--body", description = "PR body")
     String body;
+
+    @Option(names = "--body-file", paramLabel = "<path>",
+            description = "Read PR body from a file (\"-\" for stdin)")
+    String bodyFile;
 
     @Option(names = "--base", required = true, description = "Base branch")
     String base;
@@ -32,7 +36,8 @@ public final class PrCreateCommand extends BaseCommand {
 
     @Override
     public Integer call() {
-        PullRequest pr = client().createPullRequest(repo(), title, head, base, body, draft);
+        String resolvedBody = resolveBody(body, bodyFile, false);
+        PullRequest pr = client().createPullRequest(repo(), title, head, base, resolvedBody, draft);
         if (json) {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("number", pr.number());

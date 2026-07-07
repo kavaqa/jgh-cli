@@ -15,15 +15,19 @@ public final class PrReplyCommand extends BaseCommand {
             description = "Review thread node id (from `pr threads`)")
     String threadId;
 
-    @Option(names = "--body", required = true, description = "Reply body")
+    @Option(names = "--body", description = "Reply body")
     String body;
+
+    @Option(names = "--body-file", paramLabel = "<path>",
+            description = "Read reply body from a file (\"-\" for stdin)")
+    String bodyFile;
 
     @Option(names = "--resolve", description = "Resolve the thread after replying")
     boolean resolve;
 
     @Override
     public Integer call() {
-        String url = client().addReviewThreadReply(threadId, body);
+        String url = client().addReviewThreadReply(threadId, resolveBody(body, bodyFile, true));
         out().println("Replied to thread " + threadId + (url != null ? ": " + url : ""));
         if (resolve) {
             boolean resolved = client().resolveThread(threadId);

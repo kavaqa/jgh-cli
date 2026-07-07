@@ -41,6 +41,13 @@ public final class Main implements Runnable {
         @Override
         public int handleExecutionException(Exception ex, CommandLine cmd, ParseResult parseResult) {
             PrintWriter err = cmd.getErr();
+            if (ex instanceof CommandLine.ParameterException pe) {
+                // Usage error surfaced during execution (e.g. missing --body): exit 2.
+                CommandLine offending = pe.getCommandLine() != null ? pe.getCommandLine() : cmd;
+                err.println("error: " + pe.getMessage());
+                offending.usage(err);
+                return CommandLine.ExitCode.USAGE;
+            }
             if (ex instanceof ApiException apiEx) {
                 err.println("error: " + apiEx.getMessage());
                 return apiEx.exitCode();

@@ -24,17 +24,21 @@ mygh.cmd --help          # Windows
 ## Команды
 
 ```
-mygh pr create    --title <t> --body <b> --base <branch> --head <branch> [--draft] [--repo owner/name] [--json]
+mygh pr create    --title <t> [--body <b> | --body-file <path>] --base <branch> --head <branch> [--draft] [--repo owner/name] [--json]
 mygh pr list      [--state open|closed|all] [--limit N] [--repo owner/name] [--json]
 mygh pr view      <number> [--repo owner/name] [--json]
 mygh pr threads   <number> [--all | --unresolved] [--json] [--repo owner/name]
-mygh pr reply     <number> --thread <threadId> --body <b> [--resolve] [--repo owner/name]
+mygh pr reply     <number> --thread <threadId> (--body <b> | --body-file <path>) [--resolve] [--repo owner/name]
 mygh pr resolve   <number> --thread <threadId> [--repo owner/name]
 mygh pr unresolve <number> --thread <threadId> [--repo owner/name]
-mygh pr comment   <number> --body <b> [--repo owner/name]
+mygh pr comment   <number> (--body <b> | --body-file <path>) [--repo owner/name]
 ```
 
 `threadId` берётся из вывода `mygh pr threads <n>` (GraphQL node id).
+
+Тело комментария можно передать как `--body "текст"` **или** `--body-file <path>`
+(отклонение от исходного ТЗ — удобно для многострочных ответов ревьюеру);
+`--body-file -` читает из stdin. Указывать оба нельзя.
 
 ## Конфигурация (env)
 
