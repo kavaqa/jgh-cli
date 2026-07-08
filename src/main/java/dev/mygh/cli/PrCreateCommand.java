@@ -36,6 +36,8 @@ public final class PrCreateCommand extends BaseCommand {
 
     @Override
     public Integer call() {
+        warnIfArgvEncodingLossy(title, "--title",
+                "keep the title ASCII, or enable UTF-8 for argv (see README)");
         String resolvedBody = resolveBody(body, bodyFile, false);
         PullRequest pr = client().createPullRequest(repo(), title, head, base, resolvedBody, draft);
         if (json) {
