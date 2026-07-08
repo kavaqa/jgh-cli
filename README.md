@@ -1,32 +1,34 @@
-# mygh — минимальный gh-совместимый CLI на Java
+# mygh — a minimal gh-compatible CLI in Java
 
-`mygh` покрывает узкий, но критичный сценарий работы с pull request'ами GitHub там,
-где нельзя поставить оригинальный `gh`: создание PR, чтение inline-комментариев ревью
-(треды со статусом resolved), ответы в треды, резолв/анрезолв тредов.
+`mygh` covers a narrow but critical GitHub pull request workflow for environments
+where the official `gh` cannot be installed: creating PRs, reading inline review
+comments (threads with resolved status), replying to threads, and resolving/unresolving
+threads.
 
-Работает против **GitHub.com Enterprise Cloud** (`api.github.com`) с SAML SSO,
-а также против **GitHub Enterprise Server** (настраиваемые base URL). Учитывает
-корпоративный прокси и перехват TLS (Zscaler).
+It works against **GitHub.com Enterprise Cloud** (`api.github.com`) with SAML SSO, and
+against **GitHub Enterprise Server** (configurable base URLs). It accounts for a corporate
+proxy and TLS interception (Zscaler).
 
-## Сборка
+## Build
 
 ```bash
-mvn -q clean package     # -> target/mygh.jar (исполняемый fat-jar)
+mvn -q clean package     # -> target/mygh.jar (executable fat-jar)
 ```
 
-Требуется Java 17+ и Maven. Запуск через враппер:
+Requires Java 17+ and Maven. Run via the wrapper:
 
 ```bash
 ./mygh --help            # Linux/macOS
 mygh.cmd --help          # Windows
 ```
 
-## Команды
+## Commands
 
 ```
 mygh pr create    --title <t> [--body <b> | --body-file <path>] --base <branch> --head <branch> [--draft] [--repo owner/name] [--json]
 mygh pr list      [--state open|closed|all] [--limit N] [--repo owner/name] [--json]
 mygh pr view      <number> [--repo owner/name] [--json]
+mygh pr edit      <number> [--title <t>] [--body <b> | --body-file <path>] [--base <branch>] [--state open|closed] [--json] [--repo owner/name]
 mygh pr threads   <number> [--all | --unresolved] [--json] [--repo owner/name]
 mygh pr reply     <number> --thread <threadId> (--body <b> | --body-file <path>) [--resolve] [--json] [--repo owner/name]
 mygh pr resolve   <number> --thread <threadId> [--json] [--repo owner/name]
@@ -34,45 +36,48 @@ mygh pr unresolve <number> --thread <threadId> [--json] [--repo owner/name]
 mygh pr comment   <number> (--body <b> | --body-file <path>) [--json] [--repo owner/name]
 ```
 
-`threadId` берётся из вывода `mygh pr threads <n>` (GraphQL node id).
+`threadId` comes from the output of `mygh pr threads <n>` (a GraphQL node id).
 
-Тело комментария можно передать как `--body "текст"` **или** `--body-file <path>`
-(отклонение от исходного ТЗ — удобно для многострочных ответов ревьюеру);
-`--body-file -` читает из stdin. Указывать оба нельзя.
+A comment body can be passed as `--body "text"` **or** `--body-file <path>` (a deviation
+from the original spec — convenient for multi-line replies to a reviewer); `--body-file -`
+reads from stdin. Passing both is an error.
 
-## Конфигурация (env)
+`pr edit` requires at least one of `--title`, `--body`/`--body-file`, `--base`, `--state`.
+Use `--state closed` to close a PR (and `--state open` to reopen it).
 
-| Переменная | Назначение | Default |
+## Configuration (env)
+
+| Variable | Purpose | Default |
 |---|---|---|
-| `GH_TOKEN` / `GITHUB_TOKEN` | Personal access token (в таком порядке) | — |
-| `GH_HOST` | Хост | `github.com` |
+| `GH_TOKEN` / `GITHUB_TOKEN` | Personal access token (in this order) | — |
+| `GH_HOST` | Host | `github.com` |
 | `GH_REST_URL` | REST base | `https://api.github.com` (GHES: `https://<host>/api/v3`) |
 | `GH_GRAPHQL_URL` | GraphQL endpoint | `https://api.github.com/graphql` (GHES: `https://<host>/api/graphql`) |
-| `GH_REPO` | Дефолтный `owner/name` | из `git remote` |
-| `HTTPS_PROXY` / `HTTP_PROXY` / `NO_PROXY` | Прокси (JVM их не читает сама) | — |
-| `GH_CA_BUNDLE` | PEM с доверенным корневым CA (Zscaler root) | — |
+| `GH_REPO` | Default `owner/name` | from `git remote` |
+| `HTTPS_PROXY` / `HTTP_PROXY` / `NO_PROXY` | Proxy (the JVM does not read these itself) | — |
+| `GH_CA_BUNDLE` | PEM with a trusted root CA (Zscaler root) | — |
 
-Репозиторий определяется из `git remote get-url origin` (SSH и HTTPS форматы);
-`--repo` и `GH_REPO` переопределяют.
+The repository is detected from `git remote get-url origin` (SSH and HTTPS formats);
+`--repo` and `GH_REPO` override it.
 
-## Прокси и перехват TLS (Zscaler)
+## Proxy and TLS interception (Zscaler)
 
-JVM **не читает** `HTTPS_PROXY` автоматически — `mygh` читает переменные окружения
-сам и настраивает `HttpClient`. Для перехватывающего прокси укажите корневой CA:
+The JVM does **not** read `HTTPS_PROXY` automatically — `mygh` reads the environment
+variables itself and configures `HttpClient`. For an intercepting proxy, provide the root CA:
 
 ```bash
 export HTTPS_PROXY=http://127.0.0.1:9000
 export GH_CA_BUNDLE=/path/to/zscaler-root.pem
 ```
 
-Альтернатива — импорт корня в JDK-truststore (один раз):
+Alternatively, import the root into the JDK truststore (once):
 
 ```bash
 keytool -importcert -alias zscaler -file zscaler-root.pem \
   -keystore "$JAVA_HOME/lib/security/cacerts" -storepass changeit
 ```
 
-Экспорт корня Zscaler из хранилища Windows (PowerShell):
+Export the Zscaler root from the Windows store (PowerShell):
 
 ```powershell
 $cert = Get-ChildItem Cert:\LocalMachine\Root, Cert:\CurrentUser\Root |
@@ -82,63 +87,63 @@ $pem = "-----BEGIN CERTIFICATE-----`n" +
 $pem | Out-File -Encoding ascii "$env:USERPROFILE\Downloads\zscaler-root.pem"
 ```
 
-При TLS-ошибке без настроенного CA `mygh` печатает подсказку про экспорт Zscaler-сертификата.
+On a TLS error without a configured CA, `mygh` prints a hint about exporting the Zscaler certificate.
 
-## Машинно-читаемый вывод (для агентов)
+## Machine-readable output (for agents)
 
-CLI рассчитан на вызов из агента/скрипта, поэтому:
+The CLI is designed to be driven by an agent/script, so:
 
-- **`--json` есть у всех команд**, включая пишущие (`reply`/`resolve`/`unresolve`/`comment`) —
-  парсибельный результат вместо человекочитаемой строки.
-- **Ошибки категоризированы**: на stderr печатается `error [<category>]: <message>`, где
-  `category` стабильна и позволяет ветвиться без разбора текста. Возможные категории:
-  `auth`, `sso`, `rate_limit`, `not_found`, `validation`, `forbidden`, `graphql`, `tls`,
-  `network`, `config`, `usage`, `http_<код>`, `internal`.
-- **stdout/stderr всегда в UTF-8** (в т.ч. на Windows) — кириллица в телах комментариев не бьётся.
-- `pr list --limit N` при `N > 100` честно пагинирует, а не молча обрезает до 100.
+- **`--json` is available on every command**, including the write commands
+  (`create`/`edit`/`reply`/`resolve`/`unresolve`/`comment`) — a parseable result instead of
+  a human-readable line.
+- **Errors are categorized**: stderr prints `error [<category>]: <message>`, where `category`
+  is stable and lets you branch without parsing text. Possible categories: `auth`, `sso`,
+  `rate_limit`, `not_found`, `validation`, `forbidden`, `graphql`, `tls`, `network`, `config`,
+  `usage`, `http_<code>`, `internal`.
+- **stdout/stderr are always UTF-8** (including on Windows) — non-ASCII in comment bodies is not mangled.
+- `pr list --limit N` with `N > 100` paginates properly instead of silently truncating to 100.
 
-### ⚠️ Не-ASCII в аргументах командной строки на Windows
+### ⚠️ Non-ASCII in command-line arguments on Windows
 
-Java-лаунчер на Windows декодирует **аргументы командной строки** (`argv`) через
-устаревшую ANSI-кодовую страницу (`sun.jnu.encoding`, напр. `Cp1252`), а не UTF-8.
-Символы, которых в ней нет (кириллица и т.п.), превращаются в `?` **до** запуска нашего
-кода — восстановить их внутри процесса невозможно. Это касается `--title` и `--body`,
-переданных прямо в строке.
+On Windows the JVM launcher decodes **command-line arguments** (`argv`) using the legacy
+ANSI code page (`sun.jnu.encoding`, e.g. `Cp1252`), not UTF-8. Characters absent from it
+(Cyrillic, etc.) become `?` **before** our code runs — they cannot be recovered in-process.
+This affects `--title` and `--body` passed directly on the command line.
 
-**Надёжный путь для не-ASCII — не через argv:**
+**The reliable path for non-ASCII avoids argv:**
 
 ```bash
-# из файла
+# from a file
 mygh pr reply 123 --thread <id> --body-file reply.txt
-# из stdin
-printf 'Готово, поправил' | mygh pr comment 123 --body-file -
+# from stdin
+printf 'done, fixed' | mygh pr comment 123 --body-file -
 ```
 
-`--body-file`/stdin читаются как UTF-8 самим CLI и argv не задействуют. Если передать
-не-ASCII через `--body`/`--title` на затронутой платформе, CLI напечатает предупреждение.
+`--body-file`/stdin are read as UTF-8 by the CLI and do not touch argv. If you pass non-ASCII
+via `--body`/`--title` on an affected platform, the CLI prints a warning.
 
-Если argv с UTF-8 нужен именно для `--title`, включите системный UTF-8 (Windows:
+If you need UTF-8 argv specifically for `--title`, enable system UTF-8 (Windows:
 *Region → Administrative → Change system locale → Beta: Use Unicode UTF-8 for worldwide
-language support*) — тогда `sun.jnu.encoding` станет UTF-8. На Linux/macOS проблемы нет.
+language support*) so `sun.jnu.encoding` becomes UTF-8. There is no issue on Linux/macOS.
 
-## Коды возврата
+## Exit codes
 
-| Код | Значение |
+| Code | Meaning |
 |---|---|
-| 0 | Успех |
-| 1 | Ошибка API / валидации |
-| 2 | Неверные аргументы |
-| 4 | Проблема аутентификации / SSO / TLS |
+| 0 | Success |
+| 1 | API / validation error |
+| 2 | Invalid arguments |
+| 4 | Authentication / SSO / TLS problem |
 
-## Пример
+## Example
 
 ```bash
 export GH_TOKEN=ghp_xxx
 mygh pr threads 123 --unresolved
-mygh pr reply 123 --thread PRRT_kwDO... --body "Готово, поправил" --resolve
+mygh pr reply 123 --thread PRRT_kwDO... --body "done, fixed" --resolve
 ```
 
-## Вне области
+## Out of scope
 
-OAuth/device-flow, полный паритет с `gh`, интерактивные промпты, кэширование и
-конфиг-файлы — не поддерживаются (только PAT из env).
+OAuth/device-flow, full `gh` parity, interactive prompts, caching and config files are
+not supported (PAT from env only).

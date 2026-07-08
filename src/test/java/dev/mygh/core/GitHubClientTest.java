@@ -205,6 +205,24 @@ class GitHubClientTest {
     }
 
     @Test
+    void editPullRequestSuccess() throws IOException {
+        route("PATCH /repos/octocat/hello/pulls/3", ex -> {
+            assertEquals("PATCH", ex.getRequestMethod());
+            ex.getRequestBody().readAllBytes();
+            send(ex, 200, "{\"number\":3,\"title\":\"New title\",\"state\":\"closed\","
+                    + "\"base\":{\"ref\":\"main\"},\"html_url\":\"https://github.com/octocat/hello/pull/3\"}");
+        });
+
+        Map<String, Object> fields = new java.util.LinkedHashMap<>();
+        fields.put("title", "New title");
+        fields.put("state", "closed");
+        PullRequest pr = client().editPullRequest(new Repo("octocat", "hello"), 3, fields);
+        assertEquals(3, pr.number());
+        assertEquals("New title", pr.title());
+        assertEquals("closed", pr.state());
+    }
+
+    @Test
     void listPaginatesBeyondOnePage() {
         // limit=150 must fetch two pages (100 + 50) and honor the limit.
         route("GET /repos/octocat/hello/pulls", ex -> {

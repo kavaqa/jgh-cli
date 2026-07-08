@@ -87,6 +87,17 @@ public final class GitHubClient {
         return out;
     }
 
+    /**
+     * PATCH /repos/{owner}/{repo}/pulls/{number}
+     * Only the provided fields are sent (title, body, base, state).
+     */
+    public PullRequest editPullRequest(Repo repo, int number, Map<String, Object> fields) {
+        String json = restPatch(
+                restUri(String.format("/repos/%s/%s/pulls/%d", repo.owner(), repo.name(), number)),
+                Json.write(fields));
+        return parsePullRequest(Json.parse(json));
+    }
+
     /** GET /repos/{owner}/{repo}/pulls/{number} */
     public PullRequest viewPullRequest(Repo repo, int number) {
         String json = restGet(restUri(String.format("/repos/%s/%s/pulls/%d",
@@ -177,6 +188,13 @@ public final class GitHubClient {
         return sendExpectingBody(baseRequest(uri)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build());
+    }
+
+    private String restPatch(URI uri, String body) {
+        return sendExpectingBody(baseRequest(uri)
+                .header("Content-Type", "application/json")
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(body))
                 .build());
     }
 

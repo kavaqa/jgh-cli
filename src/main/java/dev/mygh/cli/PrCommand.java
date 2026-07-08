@@ -13,6 +13,7 @@ import picocli.CommandLine.Command;
                 PrCreateCommand.class,
                 PrListCommand.class,
                 PrViewCommand.class,
+                PrEditCommand.class,
                 PrThreadsCommand.class,
                 PrReplyCommand.class,
                 PrResolveCommand.class,
