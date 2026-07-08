@@ -96,6 +96,29 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Bundles a ready-to-use agent skill (SKILL.md + jar + wrappers).
+                 Runs after shade in the same phase, so target/mygh.jar exists. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.7.1</version>
+                <executions>
+                    <execution>
+                        <id>skill</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <appendAssemblyId>true</appendAssemblyId>
+                            <descriptors>
+                                <descriptor>src/assembly/skill.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

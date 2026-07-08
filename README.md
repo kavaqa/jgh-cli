@@ -22,6 +22,20 @@ Requires Java 17+ and Maven. Run via the wrapper:
 mygh.cmd --help          # Windows
 ```
 
+The wrappers find the jar next to themselves (skill layout) or in `target/`
+(development layout).
+
+### Package as an agent skill
+
+`mvn package` also produces a self-contained agent skill:
+
+- `target/mygh-skill/` — a ready-to-use folder with `SKILL.md` (agent instructions),
+  `mygh.jar`, and the `mygh` / `mygh.cmd` wrappers.
+- `target/mygh-skill.zip` — the same, zipped for distribution.
+
+Drop the folder wherever an agent looks for skills; it is self-contained (only Java 17+
+and a `GH_TOKEN` are needed at runtime).
+
 ## Commands
 
 ```

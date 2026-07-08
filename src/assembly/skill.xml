@@ -1,0 +1,35 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.1.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.0 http://maven.apache.org/xsd/assembly-2.1.0.xsd">
+    <!--
+      Packages a ready-to-use agent skill: the instruction file, the fat-jar and the
+      wrappers, as both an exploded folder (target/mygh-skill/) and a zip.
+    -->
+    <id>skill</id>
+    <formats>
+        <format>dir</format>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <files>
+        <file>
+            <source>SKILL.md</source>
+            <outputDirectory>.</outputDirectory>
+        </file>
+        <file>
+            <source>${project.build.directory}/mygh.jar</source>
+            <outputDirectory>.</outputDirectory>
+            <destName>mygh.jar</destName>
+        </file>
+        <file>
+            <source>mygh</source>
+            <outputDirectory>.</outputDirectory>
+            <fileMode>0755</fileMode>
+        </file>
+        <file>
+            <source>mygh.cmd</source>
+            <outputDirectory>.</outputDirectory>
+        </file>
+    </files>
+</assembly>
