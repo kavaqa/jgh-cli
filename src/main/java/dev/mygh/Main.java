@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets;
         mixinStandardHelpOptions = true,
         version = "mygh " + dev.mygh.core.Config.VERSION,
         description = "Minimal gh-compatible CLI for pull request review workflows.",
-        subcommands = {PrCommand.class})
+        subcommands = {PrCommand.class, HelpCommand.class})
 public final class Main implements Runnable {
 
     @Override

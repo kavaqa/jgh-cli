@@ -18,6 +18,10 @@
             <outputDirectory>.</outputDirectory>
         </file>
         <file>
+            <source>${project.build.directory}/HELP.txt</source>
+            <outputDirectory>.</outputDirectory>
+        </file>
+        <file>
             <source>${project.build.directory}/mygh.jar</source>
             <outputDirectory>.</outputDirectory>
             <destName>mygh.jar</destName>

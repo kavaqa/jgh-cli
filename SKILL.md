@@ -52,6 +52,8 @@ mygh pr comment   <number> --body-file <path> [--json]
 
 All commands also accept `--repo owner/name`. `pr edit --state closed` closes a PR.
 
+Full flag reference for every command is in **`HELP.txt`** (or run `./mygh help`).
+
 ## Typical workflow: address review comments
 
 ```sh

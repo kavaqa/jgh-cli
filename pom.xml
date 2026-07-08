@@ -97,7 +97,32 @@
                 </executions>
             </plugin>
 
-            <!-- Bundles a ready-to-use agent skill (SKILL.md + jar + wrappers).
+            <!-- Generate HELP.txt from the built jar (runs after shade, before assembly). -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>generate-help</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-jar</argument>
+                                <argument>${project.build.directory}/mygh.jar</argument>
+                                <argument>help</argument>
+                            </arguments>
+                            <outputFile>${project.build.directory}/HELP.txt</outputFile>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Bundles a ready-to-use agent skill (SKILL.md + HELP.txt + jar + wrappers).
                  Runs after shade in the same phase, so target/mygh.jar exists. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
